@@ -1,179 +1,245 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize file preview functionality
-    initFilePreview('rcBook', 'rcBookPreview');
-    initFilePreview('license', 'licensePreview');
-    initFilePreview('insurance', 'insurancePreview');
-    
-    // Load existing drivers
-    fetchDrivers();
-    
-    // Form submission handler
-    document.getElementById('driverForm').addEventListener('submit', function(e) {
+document.addEventListener("DOMContentLoaded", function () {
+  // Initialize file preview functionality
+  initFilePreview("rcBook", "rcBookPreview");
+  initFilePreview("license", "licensePreview");
+  initFilePreview("insurance", "insurancePreview");
+
+  // Load existing drivers
+  fetchDrivers();
+
+  // Form submission handler
+  // document.getElementById('driverForm').addEventListener('submit', function(e) {
+  //     e.preventDefault();
+
+  //     // Get form values
+  //     const numberPlate = document.getElementById('numberPlate').value;
+  //     const driverName = document.getElementById('driverName').value;
+  //     const rcBook = document.getElementById('rcBook').files[0];
+  //     const license = document.getElementById('license').files[0];
+  //     const insurance = document.getElementById('insurance').files[0];
+
+  //     // Create form data for submission
+  //     const formData = new FormData();
+  //     formData.append('numberPlate', numberPlate);
+  //     formData.append('driverName', driverName);
+  //     formData.append('rcBook', rcBook);
+  //     formData.append('license', license);
+  //     formData.append('insurance', insurance);
+
+  //     // Submit data to server
+  //     fetch('/api/drivers', {
+  //         method: 'POST',
+  //         body: formData
+  //     })
+  //     .then(response => response.json())
+  //     .then(data => {
+  //         if (data.success) {
+  //             // Generate QR code with the ID
+  //             generateQRCode(data.id);
+
+  //             // Refresh drivers list
+  //             fetchDrivers();
+
+  //             // Reset form
+  //             document.getElementById('driverForm').reset();
+
+  //             // Hide previews
+  //             document.getElementById('rcBookPreview').classList.add('d-none');
+  //             document.getElementById('licensePreview').classList.add('d-none');
+  //             document.getElementById('insurancePreview').classList.add('d-none');
+
+  //             alert('Driver information saved successfully!');
+  //         } else {
+  //             alert('Error: ' + data.message);
+  //         }
+  //     })
+  //     .catch(error => {
+  //         console.error('Error:', error);
+  //         alert('An error occurred while saving the driver information.');
+  //     });
+  // });
+  document.addEventListener("DOMContentLoaded", function () {
+    document
+      .getElementById("driverForm")
+      .addEventListener("submit", function (e) {
         e.preventDefault();
-        
-        // Get form values
-        const numberPlate = document.getElementById('numberPlate').value;
-        const driverName = document.getElementById('driverName').value;
-        const rcBook = document.getElementById('rcBook').files[0];
-        const license = document.getElementById('license').files[0];
-        const insurance = document.getElementById('insurance').files[0];
-        
-        // Create form data for submission
-        const formData = new FormData();
-        formData.append('numberPlate', numberPlate);
-        formData.append('driverName', driverName);
-        formData.append('rcBook', rcBook);
-        formData.append('license', license);
-        formData.append('insurance', insurance);
-        
-        // Submit data to server
-        fetch('/api/drivers', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Generate QR code with the ID
-                generateQRCode(data.id);
-                
-                // Refresh drivers list
-                fetchDrivers();
-                
-                // Reset form
-                document.getElementById('driverForm').reset();
-                
-                // Hide previews
-                document.getElementById('rcBookPreview').classList.add('d-none');
-                document.getElementById('licensePreview').classList.add('d-none');
-                document.getElementById('insurancePreview').classList.add('d-none');
-                
-                alert('Driver information saved successfully!');
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while saving the driver information.');
+        submitDriverForm();
+      });
+  });
+
+  function submitDriverForm() {
+    // Get form values
+    const numberPlate = document.getElementById("numberPlate").value.trim();
+    const driverName = document.getElementById("driverName").value.trim();
+    const rcBook = document.getElementById("rcBook").files[0];
+    const license = document.getElementById("license").files[0];
+    const insurance = document.getElementById("insurance").files[0];
+
+    console.log("Form Data:", { numberPlate, driverName }); // Debug log
+
+    // Validate input fields
+    if (!numberPlate || !driverName || !rcBook || !license || !insurance) {
+      alert("All fields are required.");
+      return;
+    }
+
+    // Create form data
+    const formData = new FormData();
+    formData.append("numberPlate", numberPlate);
+    formData.append("driverName", driverName);
+    formData.append("rcBook", rcBook);
+    formData.append("license", license);
+    formData.append("insurance", insurance);
+
+    console.log("Sending request to server..."); // Debug log
+
+    // Send data to the server - Use the correct URL
+    fetch("/api/drivers", {
+      // Changed from http://localhost:8000/api/drivers
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Server response:", data); // Add this debug log
+        if (data.success) {
+          generateQRCode(data.id);
+          document.getElementById("driverForm").reset();
+          document.getElementById("rcBookPreview").classList.add("d-none");
+          document.getElementById("licensePreview").classList.add("d-none");
+          document.getElementById("insurancePreview").classList.add("d-none");
+          fetchDrivers();
+          alert("Driver information saved successfully!");
+        } else {
+          alert("Error: " + data.message);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("An error occurred while saving the driver information.");
+      });
+  }
+
+  // Add scan button event listener
+  document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("btn-scan")) {
+      // Show scanner modal
+      const scannerModal = new bootstrap.Modal(
+        document.getElementById("scannerModal")
+      );
+      scannerModal.show();
+
+      // Initialize QR scanner
+      const html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+      html5QrCode
+        .start({ facingMode: "environment" }, config, onScanSuccess)
+        .catch((err) => {
+          console.error(`QR Code scanning failed: ${err}`);
         });
-    });
-    
-    // Add scan button event listener
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('btn-scan')) {
-            // Show scanner modal
-            const scannerModal = new bootstrap.Modal(document.getElementById('scannerModal'));
-            scannerModal.show();
-            
-            // Initialize QR scanner
-            const html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-                .catch(err => {
-                    console.error(`QR Code scanning failed: ${err}`);
-                });
-                
-            function onScanSuccess(decodedText) {
-                // Stop scanning
-                html5QrCode.stop();
-                
-                // Close scanner modal
-                scannerModal.hide();
-                
-                // Fetch driver details with the scanned ID
-                fetchDriverDetails(decodedText);
-            }
-        }
-    });
-    
-    // Add view button event listener
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('btn-view')) {
-            const driverId = e.target.getAttribute('data-id');
-            fetchDriverDetails(driverId);
-        }
-    });
+
+      function onScanSuccess(decodedText) {
+        // Stop scanning
+        html5QrCode.stop();
+
+        // Close scanner modal
+        scannerModal.hide();
+
+        // Fetch driver details with the scanned ID
+        fetchDriverDetails(decodedText);
+      }
+    }
+  });
+
+  // Add view button event listener
+  document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("btn-view")) {
+      const driverId = e.target.getAttribute("data-id");
+      fetchDriverDetails(driverId);
+    }
+  });
 });
 
 // Initialize file preview functionality
 function initFilePreview(inputId, previewId) {
-    const input = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
-    
-    input.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.classList.remove('d-none');
-            };
-            
-            reader.readAsDataURL(this.files[0]);
-        }
-    });
+  const input = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+
+  input.addEventListener("change", function () {
+    if (this.files && this.files[0]) {
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.classList.remove("d-none");
+      };
+
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
 }
 
 // Generate QR code with driver ID
 function generateQRCode(driverId) {
-    const qrCodeContainer = document.getElementById('qrCode');
-    qrCodeContainer.innerHTML = '';
-    
-    const qrcode = new QRCode(qrCodeContainer, {
-        text: driverId,
-        width: 200,
-        height: 200,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-    });
-    
-    // Show download button
-    const downloadButton = document.getElementById('downloadQR');
-    downloadButton.classList.remove('d-none');
-    
-    // Set up download functionality
-    setTimeout(() => {
-        const qrImage = qrCodeContainer.querySelector('img');
-        if (qrImage) {
-            downloadButton.href = qrImage.src;
-            downloadButton.download = `qrcode_${driverId}.png`;
-        }
-    }, 500);
+  const qrCodeContainer = document.getElementById("qrCode");
+  qrCodeContainer.innerHTML = "";
+
+  const qrcode = new QRCode(qrCodeContainer, {
+    text: driverId,
+    width: 200,
+    height: 200,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H,
+  });
+
+  // Show download button
+  const downloadButton = document.getElementById("downloadQR");
+  downloadButton.classList.remove("d-none");
+
+  // Set up download functionality
+  setTimeout(() => {
+    const qrImage = qrCodeContainer.querySelector("img");
+    if (qrImage) {
+      downloadButton.href = qrImage.src;
+      downloadButton.download = `qrcode_${driverId}.png`;
+    }
+  }, 500);
 }
 
 // Fetch all drivers
 function fetchDrivers() {
-    fetch('/api/drivers')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                renderDriversTable(data.drivers);
-            } else {
-                console.error('Error fetching drivers:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+  fetch("/api/drivers") // Changed from http://localhost:8000/api/drivers
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("Fetched drivers:", data); // Add this debug log
+      if (data.success) {
+        renderDriversTable(data.drivers);
+      } else {
+        console.error("Error fetching drivers:", data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
 }
 
 // Render drivers table
 function renderDriversTable(drivers) {
-    const tableBody = document.getElementById('driversTable');
-    tableBody.innerHTML = '';
-    
-    if (drivers.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No drivers registered yet</td></tr>';
-        return;
-    }
-    
-    drivers.forEach(driver => {
-        const row = document.createElement('tr');
-        
-        row.innerHTML = `
+  const tableBody = document.getElementById("driversTable");
+  tableBody.innerHTML = "";
+
+  if (drivers.length === 0) {
+    tableBody.innerHTML =
+      '<tr><td colspan="4" class="text-center">No drivers registered yet</td></tr>';
+    return;
+  }
+
+  drivers.forEach((driver) => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
             <td>${driver.numberPlate}</td>
             <td>${driver.driverName}</td>
             <td><img src="/api/qrcode/${driver.id}" alt="QR Code" height="50"></td>
@@ -182,33 +248,33 @@ function renderDriversTable(drivers) {
                 <button class="btn btn-sm btn-success btn-scan">Scan QR</button>
             </td>
         `;
-        
-        tableBody.appendChild(row);
-    });
+
+    tableBody.appendChild(row);
+  });
 }
 
 // Fetch driver details
 function fetchDriverDetails(driverId) {
-    fetch(`/api/drivers/${driverId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showDriverDetails(data.driver);
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while fetching driver details.');
-        });
+  fetch(`/api/drivers/${driverId}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        showDriverDetails(data.driver);
+      } else {
+        alert("Error: " + data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("An error occurred while fetching driver details.");
+    });
 }
 
 // Show driver details in modal
 function showDriverDetails(driver) {
-    const detailsContainer = document.getElementById('driverDetails');
-    
-    detailsContainer.innerHTML = `
+  const detailsContainer = document.getElementById("driverDetails");
+
+  detailsContainer.innerHTML = `
         <div class="row mb-4">
             <div class="col-md-6">
                 <h4>Driver Information</h4>
@@ -249,8 +315,10 @@ function showDriverDetails(driver) {
             </div>
         </div>
     `;
-    
-    // Show driver modal
-    const driverModal = new bootstrap.Modal(document.getElementById('driverModal'));
-    driverModal.show();
+
+  // Show driver modal
+  const driverModal = new bootstrap.Modal(
+    document.getElementById("driverModal")
+  );
+  driverModal.show();
 }

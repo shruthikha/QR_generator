@@ -1,153 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Truck Driver QR Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            padding-top: 2rem;
-            background-color: #f8f9fa;
-        }
-        .form-container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-        .preview-container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        #qrCode {
-            text-align: center;
-            margin-top: 1rem;
-        }
-        .file-preview {
-            max-width: 100%;
-            max-height: 200px;
-            margin-top: 10px;
-        }
+      body {
+        padding-top: 2rem;
+        background-color: #f8f9fa;
+      }
+      .form-container {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+      .preview-container {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      #qrCode {
+        text-align: center;
+        margin-top: 1rem;
+      }
+      .file-preview {
+        max-width: 100%;
+        max-height: 200px;
+        margin-top: 10px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1 class="text-center mb-4">Truck Driver QR Code Generator</h1>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-container">
-                    <h2 class="mb-3">Driver Information</h2>
-                    <form id="driverForm" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="numberPlate" class="form-label">Vehicle Number Plate</label>
-                            <input type="text" class="form-control" id="numberPlate" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="driverName" class="form-label">Driver Name</label>
-                            <input type="text" class="form-control" id="driverName" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="rcBook" class="form-label">RC Book Copy</label>
-                            <input type="file" class="form-control" id="rcBook" accept="image/*" required>
-                            <img id="rcBookPreview" class="file-preview d-none" alt="RC Book Preview">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="license" class="form-label">Driver's License Copy</label>
-                            <input type="file" class="form-control" id="license" accept="image/*" required>
-                            <img id="licensePreview" class="file-preview d-none" alt="License Preview">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="insurance" class="form-label">Vehicle Insurance Copy</label>
-                            <input type="file" class="form-control" id="insurance" accept="image/*" required>
-                            <img id="insurancePreview" class="file-preview d-none" alt="Insurance Preview">
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100">Generate QR Code</button>
-                    </form>
-                </div>
-            </div>
-            
-            <div class="col-md-6">
-                <div class="preview-container">
-                    <h2 class="mb-3">Generated QR Code</h2>
-                    <div id="qrCode"></div>
-                    <div class="mt-3 text-center">
-                        <a id="downloadQR" class="btn btn-success d-none">Download QR Code</a>
-                    </div>
-                    <div class="mt-4">
-                        <h4>Scan QR Code to View Details</h4>
-                        <p>Use any QR code scanner to access driver and vehicle information.</p>
-                    </div>
-                </div>
-            </div>
+      <h1 class="text-center mb-4">Truck Driver QR Code Generator</h1>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-container">
+            <h2 class="mb-3">Driver Information</h2>
+            <form id="driverForm" enctype="multipart/form-data">
+              <div class="mb-3">
+                <label for="numberPlate" class="form-label"
+                  >Vehicle Number Plate</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="numberPlate"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="driverName" class="form-label">Driver Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="driverName"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="rcBook" class="form-label">RC Book Copy</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="rcBook"
+                  accept="image/*"
+                  required
+                />
+                <img
+                  id="rcBookPreview"
+                  class="file-preview d-none"
+                  alt="RC Book Preview"
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="license" class="form-label"
+                  >Driver's License Copy</label
+                >
+                <input
+                  type="file"
+                  class="form-control"
+                  id="license"
+                  accept="image/*"
+                  required
+                />
+                <img
+                  id="licensePreview"
+                  class="file-preview d-none"
+                  alt="License Preview"
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="insurance" class="form-label"
+                  >Vehicle Insurance Copy</label
+                >
+                <input
+                  type="file"
+                  class="form-control"
+                  id="insurance"
+                  accept="image/*"
+                  required
+                />
+                <img
+                  id="insurancePreview"
+                  class="file-preview d-none"
+                  alt="Insurance Preview"
+                />
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100">
+                Generate QR Code
+              </button>
+            </form>
+          </div>
         </div>
 
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="preview-container">
-                    <h2 class="mb-3">Registered Drivers</h2>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Number Plate</th>
-                                    <th>Driver Name</th>
-                                    <th>QR Code</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="driversTable">
-                                <!-- Drivers will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="col-md-6">
+          <div class="preview-container">
+            <h2 class="mb-3">Generated QR Code</h2>
+            <div id="qrCode"></div>
+            <div class="mt-3 text-center">
+              <a id="downloadQR" class="btn btn-success d-none"
+                >Download QR Code</a
+              >
             </div>
+            <div class="mt-4">
+              <h4>Scan QR Code to View Details</h4>
+              <p>
+                Use any QR code scanner to access driver and vehicle
+                information.
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="preview-container">
+            <h2 class="mb-3">Registered Drivers</h2>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Number Plate</th>
+                    <th>Driver Name</th>
+                    <th>QR Code</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="driversTable">
+                  <!-- Drivers will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- QR Code Scanner Modal -->
     <div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Scan QR Code</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="reader" width="600px"></div>
-                </div>
-            </div>
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Scan QR Code</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div id="reader" width="600px"></div>
+          </div>
         </div>
+      </div>
     </div>
 
     <!-- Driver Details Modal -->
     <div class="modal fade" id="driverModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Driver Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="driverDetails">
-                    <!-- Driver details will be shown here -->
-                </div>
-            </div>
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Driver Details</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" id="driverDetails">
+            <!-- Driver details will be shown here -->
+          </div>
         </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
     <script src="app.js"></script>
-</body>
+  </body>
 </html>

@@ -1,165 +1,194 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-const QRCode = require('qrcode');
+require("dotenv").config();
+const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const mysql = require("mysql2");
+const { v4: uuidv4 } = require("uuid");
+const QRCode = require("qrcode");
+const cors = require("cors");
 
 const app = express();
 const port = process.env.PORT || 8000;
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// MySQL Database Connection
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+db.getConnection((err, connection) => {
+  if (err) {
+    console.error("❌ Database connection failed:", err);
+    process.exit(1);
+  } else {
+    console.log("✅ Connected to MySQL Database");
+    connection.release();
+  }
+});
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Setup storage for multer
+// Multer storage setup
 const storage = multer.diskStorage({
-    destination: function(req, file, cb) {
-        cb(null, uploadsDir);
-    },
-    filename: function(req, file, cb) {
-        const fileExt = path.extname(file.originalname);
-        cb(null, `${uuidv4()}${fileExt}`);
-    }
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) =>
+    cb(null, `${uuidv4()}${path.extname(file.originalname)}`),
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
 // Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use("/uploads", express.static(uploadsDir));
 
-// In-memory database for demo purposes (use a real database for production)
-const driversDB = [];
-
-// API endpoints
-// Get all drivers
-app.get('/api/drivers', (req, res) => {
-    res.json({
-        success: true,
-        drivers: driversDB.map(driver => ({
-            id: driver.id,
-            numberPlate: driver.numberPlate,
-            driverName: driver.driverName
-        }))
-    });
-});
-
-// Get driver by ID
-app.get('/api/drivers/:id', (req, res) => {
-    const driver = driversDB.find(d => d.id === req.params.id);
-    
-    if (!driver) {
-        return res.status(404).json({
-            success: false,
-            message: 'Driver not found'
-        });
+// API: Get all drivers
+app.get("/api/drivers", (req, res) => {
+  db.query(
+    "SELECT id, numberPlate, driverName FROM drivers",
+    (err, results) => {
+      if (err) {
+        console.error("❌ MySQL Error:", err);
+        return res
+          .status(500)
+          .json({ success: false, message: "Database error" });
+      }
+      res.json({ success: true, drivers: results });
     }
-    
-    res.json({
-        success: true,
-        driver: {
-            id: driver.id,
-            numberPlate: driver.numberPlate,
-            driverName: driver.driverName,
-            rcBookUrl: `/uploads/${path.basename(driver.rcBook)}`,
-            licenseUrl: `/uploads/${path.basename(driver.license)}`,
-            insuranceUrl: `/uploads/${path.basename(driver.insurance)}`
-        }
-    });
+  );
 });
 
-// Create new driver
-app.post('/api/drivers', upload.fields([
-    { name: 'rcBook', maxCount: 1 },
-    { name: 'license', maxCount: 1 },
-    { name: 'insurance', maxCount: 1 }
-]), (req, res) => {
+// API: Get driver by ID
+app.get("/api/drivers/:id", (req, res) => {
+  const { id } = req.params;
+  db.query("SELECT * FROM drivers WHERE id = ?", [id], (err, results) => {
+    if (err) {
+      console.error("❌ MySQL Error:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Database error" });
+    }
+    if (results.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Driver not found" });
+    }
+
+    const driver = results[0];
+    res.json({
+      success: true,
+      driver: {
+        id: driver.id,
+        numberPlate: driver.numberPlate,
+        driverName: driver.driverName,
+        rcBookUrl: `/uploads/${path.basename(driver.rcBook)}`,
+        licenseUrl: `/uploads/${path.basename(driver.license)}`,
+        insuranceUrl: `/uploads/${path.basename(driver.insurance)}`,
+      },
+    });
+  });
+});
+
+// API: Add new driver
+app.post(
+  "/api/drivers",
+  upload.fields([
+    { name: "rcBook", maxCount: 1 },
+    { name: "license", maxCount: 1 },
+    { name: "insurance", maxCount: 1 },
+  ]),
+  (req, res) => {
     try {
-        // Extract form data
-        const { numberPlate, driverName } = req.body;
-        
-        // Validate required fields
-        if (!numberPlate || !driverName || !req.files.rcBook || !req.files.license || !req.files.insurance) {
-            return res.status(400).json({
-                success: false,
-                message: 'All fields are required'
+      const { numberPlate, driverName } = req.body;
+      if (!numberPlate || !driverName || !req.files) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Missing required fields" });
+      }
+
+      const id = uuidv4();
+      const rcBook = req.files.rcBook[0].path;
+      const license = req.files.license[0].path;
+      const insurance = req.files.insurance[0].path;
+
+      db.query(
+        "INSERT INTO drivers (id, numberPlate, driverName, rcBook, license, insurance) VALUES (?, ?, ?, ?, ?, ?)",
+        [id, numberPlate, driverName, rcBook, license, insurance],
+        (err) => {
+          if (err) {
+            console.error("❌ MySQL Insert Error:", err);
+            return res
+              .status(500)
+              .json({ success: false, message: "Failed to save driver" });
+          }
+
+          // Generate QR Code
+          const qrCodePath = path.join(uploadsDir, `qr_${id}.png`);
+          QRCode.toFile(qrCodePath, id, (qrErr) => {
+            if (qrErr) {
+              console.error("❌ QR Code Error:", qrErr);
+              return res
+                .status(500)
+                .json({ success: false, message: "QR code generation failed" });
+            }
+
+            res.json({
+              success: true,
+              id,
+              message: "Driver added successfully",
             });
+          });
         }
-        
-        // Generate unique ID
-        const id = uuidv4();
-        
-        // Create driver object
-        const driver = {
-            id,
-            numberPlate,
-            driverName,
-            rcBook: req.files.rcBook[0].path,
-            license: req.files.license[0].path,
-            insurance: req.files.insurance[0].path,
-            createdAt: new Date()
-        };
-        
-        // Save driver to database
-        driversDB.push(driver);
-        
-        // Generate QR code for the driver ID
-        const qrCodePath = path.join(uploadsDir, `qr_${id}.png`);
-        QRCode.toFile(qrCodePath, id, {
-            color: {
-                dark: '#000000',
-                light: '#ffffff'
-            }
-        });
-        
-        // Return success response
-        res.json({
-            success: true,
-            id: id,
-            message: 'Driver information saved successfully'
-        });
+      );
     } catch (error) {
-        console.error('Error saving driver:', error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while saving driver information'
-        });
+      console.error("❌ Server Error:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error" });
     }
+  }
+);
+
+// API: Get QR Code Image
+app.get("/api/qrcode/:id", (req, res) => {
+  const qrCodePath = path.join(uploadsDir, `qr_${req.params.id}.png`);
+
+  if (fs.existsSync(qrCodePath)) {
+    res.sendFile(qrCodePath);
+  } else {
+    QRCode.toBuffer(req.params.id, (err, buffer) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to generate QR code" });
+      }
+      res.set("Content-Type", "image/png");
+      res.send(buffer);
+    });
+  }
 });
 
-// Get QR code image
-app.get('/api/qrcode/:id', (req, res) => {
-    const qrCodePath = path.join(uploadsDir, `qr_${req.params.id}.png`);
-    
-    if (fs.existsSync(qrCodePath)) {
-        res.sendFile(qrCodePath);
-    } else {
-        // Generate QR code on-the-fly if file doesn't exist
-        QRCode.toBuffer(req.params.id, (err, buffer) => {
-            if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Failed to generate QR code'
-                });
-            }
-            
-            res.set('Content-Type', 'image/png');
-            res.send(buffer);
-        });
-    }
-});
-
-// Serve uploads
-app.use('/uploads', express.static(uploadsDir));
-
-// Serve the main HTML file for all other routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("❌ Unexpected Error:", err);
+  res.status(500).json({ success: false, message: "Something went wrong" });
 });
 
 // Start the server
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
+app.listen(port, () =>
+  console.log(`✅ Server running at http://localhost:${port}`)
+);
